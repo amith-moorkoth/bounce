@@ -1,0 +1,283 @@
+<html>
+<style>
+    @font-face {
+        font-family: 'font2';
+        src: url('font/font2.ttf');
+    }
+    body{
+        background: url(photo/8.gif);
+        background-size: 100% 100%;
+        overflow: hidden;
+        font-family: abc;
+        font-size: 40px;
+        text-align: center;
+        color: white;
+        height: 100%;
+    }
+    .bk{
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        background: rgba(30, 32, 33, 0.96);
+        border-radius: 10px;
+        padding: 10px;
+    }
+    .scorecard{
+        background: url(mygame/scorecard/card.png);
+        background-size: 100% 100%;
+        width: 70%;
+        height: 80%;
+        position: fixed;
+        top: 10%;
+        left: 15%;
+    }
+    .star1,.star2,.star3{
+        background: url(mygame/scorecard/star.png);
+        background-repeat: no-repeat;
+        position: fixed;
+        width: 10%;
+        height: 20%;
+        top: 25%;
+        left: 30%;
+        -vendor-animation-duration: 5s;
+        -vendor-animation-delay: 4s;
+    }
+    .star1{
+        background: url(mygame/scorecard/star1.png);
+        background-size: 100% 100%;
+        left: 25%;
+        top: 23%;
+        height: 20%;
+        width: 14%;
+    }
+    .star2{
+        left: 41%;
+        background: url(mygame/scorecard/star2.png);
+        background-size: 100% 100%;
+        width: 17%;
+        top: 23%;
+    }
+    .star3{
+        background: url(mygame/scorecard/star3.png);
+        background-size: 100% 100%;
+        left: 62%;
+        width: 14%;
+        height: 17%;
+    }
+    .headtext{
+        position: fixed;
+        font-size: 30%;
+        font-family: font2;
+        top: 15%;
+        left: 43%;
+    }
+    .timer {
+        position: fixed;
+        font-size: 40%;
+        font-family: font2;
+        top: 47%;
+        left: 50%;
+        color: black;
+    }
+    .scare {
+        position: fixed;
+        font-size: 40%;
+        font-family: font2;
+        top: 57%;
+        left: 50%;
+        color: black;
+    }
+    .but1,.but2,.but3,.but4{
+        padding-bottom: 2%;
+        padding-left: 2%;
+        padding-right: 2%;
+        margin-top: -2%;
+    }
+    .but1{
+        background: url(mygame/scorecard/but1.png);
+        background-size: 100% 100%;
+        position: absolute;
+        top: 70%;
+        left: 32%;
+    }
+    .but2{
+        background: url(mygame/scorecard/but2.png);
+        background-size: 100% 100%;
+        position: absolute;
+        top: 70%;
+        left: 41%;
+    }.but3{
+         background: url(mygame/scorecard/but3.png);
+         background-size: 100% 100%;
+         position: absolute;
+         top: 70%;
+         left: 50.2%;
+     }.but4{
+          background: url(mygame/scorecard/but4.png);
+          background-size: 100% 100%;
+          position: absolute;
+          top: 70%;
+          left: 60%;
+      }
+      .but1{
+          -vendor-animation-duration: 5s;
+          -vendor-animation-delay: 4s;
+      }
+    .but1 img,.but2 img,.but3 img,.but4 img {
+        width: 35px;
+        margin-top: 15px;
+    }
+    </style>
+    <link rel="stylesheet" type="text/css" href="animate.css">
+    <body>
+        <div class="bk">
+            <div class="scorecard"></div>
+            <div class="star1" id="star1"></div>
+            <div class="star2" id="star2"></div>
+            <div class="star3" id="star3"></div>
+            <div class="headtext" id="leveltext">Level Complete</div>
+            <div class="timer" id="time">10:10:10</div>
+            <div class="scare" id="score">100000</div>
+            <div class="but1" id="but1" onclick="menuclick()"><img src="mygame/scorecard/menu.png"></div>
+            <div class="but2" id="but2" onclick="setclick()"><img src="mygame/scorecard/settings.png"></div>
+            <div class="but3" id="but3" onclick="reloadclick()"><img src="mygame/scorecard/reload.png"></div>
+            <div class="but4" id="but4" onclick="nextclick()"><img src="mygame/scorecard/next.png"></div>
+        </div>
+        <script src="jquery.js"></script>
+        <script>
+            function menuclick(){
+                $('#but1').removeClass('animated ' + 'bounceInLeft');
+                $('#but1').addClass('animated bounceIn');
+                setTimeout(function(){window.location = "hex/index.html";},500);
+            }
+            function setclick(){
+                $('#but2').removeClass('animated ' + 'bounceInLeft');
+                $('#but2').addClass('animated bounceIn');
+                setTimeout(function(){window.location = "Settings/index.html";},500);
+            }
+            function reloadclick(){
+                $('#but3').removeClass('animated ' + 'bounceInLeft');
+                $('#but3').addClass('animated bounceIn');
+                setTimeout(function(){window.location = "play.html";},500);
+            }
+            function nextclick(){
+                $('#but4').removeClass('animated ' + 'bounceInLeft');
+                $('#but4').addClass('animated bounceIn');
+                setTimeout(function(){
+                    var level=window.localStorage.getItem('curlevel');
+                    level-=1;level+=2;
+                    window.localStorage.setItem('curlevel', level);
+                    window.location = "play.html";
+                },500);
+            }
+            function retrieveele(){
+                //button animation
+                $('#but1').addClass('animated bounceInLeft');
+                $('#but2').addClass('animated bounceInLeft');
+                $('#but3').addClass('animated bounceInLeft');
+                $('#but4').addClass('animated bounceInLeft');
+
+                //program starts
+                var level=window.localStorage.getItem('curlevel');
+                var timer=window.localStorage.getItem('mytime');
+                var myscore=window.localStorage.getItem('score');
+                myscore=Math.floor(myscore);
+                document.getElementById("time").innerHTML=timer;
+                document.getElementById("score").innerHTML=myscore;
+                $('#time').addClass('animated zoomIn');
+                $('#score').addClass('animated wobble');
+                var star=0;
+                if(myscore>(1900+(100*level))){star=3;}
+                else if(myscore>(1400+(100*level))){star=2;}
+                else{star=1;}
+                document.getElementById("star1").style.display="none";
+                document.getElementById("star2").style.display="none";
+                document.getElementById("star3").style.display="none";//alert(star);
+                var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+                if(star==3){
+                    document.getElementById("star1").style.display="block";
+                    $("#star1").addClass('animated ' + 'jello').one(animationEnd, function() {
+                        $(this).removeClass('animated ' + 'jello');
+                        document.getElementById("star2").style.display="block";
+                        $("#star2").addClass('animated ' + 'rubberBand').one(animationEnd, function() {
+                            $(this).removeClass('animated ' + 'rubberBand');
+                            document.getElementById("star3").style.display="block";
+                            $('#star3').addClass('animated tada');
+                        });
+                    });
+                }else if(star==2){
+                    document.getElementById("star1").style.display="block";
+                    $("#star1").addClass('animated ' + 'jello').one(animationEnd, function() {
+                        $(this).removeClass('animated ' + 'jello');
+                        document.getElementById("star2").style.display="block";
+                        $('#star2').addClass('animated rubberBand');
+                    });
+                }else if(star==1){
+                    document.getElementById("star1").style.display="block";
+                    $('#star1').addClass('animated jello');
+                }
+
+                //setcooie
+
+                var PLAYER_DATA = null;
+                var str = window.localStorage.getItem('mygame_progress');
+                try {
+                    PLAYER_DATA = JSON.parse(str);
+                } catch(e){
+                    PLAYER_DATA = [];
+                };
+                if (Object.prototype.toString.call( PLAYER_DATA ) !== '[object Array]' ) {
+                    PLAYER_DATA = [];
+                };
+
+                if(PLAYER_DATA[level-2]==null){
+                    PLAYER_DATA[level-2] = star;
+                }else if(PLAYER_DATA[level-2]< star){
+                    PLAYER_DATA[level-2] = star;
+                }
+
+                window.localStorage.setItem('mygame_progress', JSON.stringify(PLAYER_DATA));
+                //playerdata stored suceessfully
+
+            }retrieveele();
+
+
+            function updatelevelstatus(){
+                var PLAYER_DATA = null;
+                var str = window.localStorage.getItem('mygame_progress');
+                var str2 = window.localStorage.getItem('mygame_levels');
+                try {
+                    PLAYER_DATA = JSON.parse(str);
+                } catch(e){
+                    PLAYER_DATA = [];
+                };
+                if (Object.prototype.toString.call( PLAYER_DATA ) !== '[object Array]' ) {
+                    PLAYER_DATA = [];
+                };
+                //calculate levelscore in each level
+                var levelscore=0;
+                var arrayLength = PLAYER_DATA.length;
+                for (var i = 0; i < arrayLength; i++) {
+                    if(PLAYER_DATA[i]!=null){
+                        levelscore+=((i+1)*PLAYER_DATA[i]);
+                    }
+                }
+                //calculate valis levelscore to pass the level
+                var myvalidscore=0;
+                if(str2==null){str2=5;}
+                str2-=1;str2+=1;
+                for(i=0;i<str2-2;i++){
+                    myvalidscore+=i*2;
+                }
+                //passing the level
+                if(myvalidscore<levelscore){
+                    window.localStorage.setItem('mygame_levels', PLAYER_DATA.length-1);
+                    PLAYER_DATA[PLAYER_DATA.length] = 0;
+                }
+                window.localStorage.setItem('mygame_progress', JSON.stringify(PLAYER_DATA));
+            }updatelevelstatus();
+        </script>
+    </body>
+</html>

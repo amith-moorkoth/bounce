@@ -1,0 +1,588 @@
+<html>
+
+    <head>
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        <script src='Box2dWeb.min.js'></script>
+        <script src="Three.js"></script>
+        <script src="keyboard.js"></script>
+        <script src="jquery.js"></script>
+        <script src="maze.js"></script>
+        <script type='text/javascript' charset='utf-8' src='cordova.js'></script>
+        <script type='text/javascript' charset='utf-8' src='css/jquery.js'></script>
+        <script type='text/javascript' charset='utf-8' src='css/jquery-ui.js'></script>
+        <link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
+        <script>
+        var progressbar = $( "#progressbar" ),
+                progressLabel = $( ".progress-label" );
+
+            var balli=window.localStorage.getItem("balltex");
+            var meshi=window.localStorage.getItem("walltex");
+            var backi=window.localStorage.getItem("backtex");
+            if(balli==null){balli=1;}
+            if(meshi==null){meshi=1;}
+            if(backi==null){backi=1;}
+            var mycurrlevel=window.localStorage.getItem('curlevel');
+            if(mycurrlevel==null){mycurrlevel=0;}
+            mycurrlevel-=2;
+            mycurrlevel*=2;
+            mycurrlevel+=9;
+            var camera         = undefined,
+                scene          = undefined,
+                renderer       = undefined,
+                light          = undefined,
+                mouseX         = undefined,
+                mouseY         = undefined,
+                maze           = undefined,
+                mazeMesh       = undefined,
+                mazeDimension  = mycurrlevel,
+                planeMesh      = undefined,
+                ballMesh       = undefined,
+                oballRadius    = 0.17,
+                ballRadius     = oballRadius,
+                keyAxis        = [0, 0],
+                ironTexture    = THREE.ImageUtils.loadTexture('ball/ball'+balli+'.png'),
+                planeTexture   = THREE.ImageUtils.loadTexture('concrete/text'+backi+'.png'),
+                brickTexture   = THREE.ImageUtils.loadTexture('brick/brick'+meshi+'.png'),
+                gameState      = undefined,
+
+            // Box2D shortcuts
+                b2World        = Box2D.Dynamics.b2World,
+                b2FixtureDef   = Box2D.Dynamics.b2FixtureDef,
+                b2BodyDef      = Box2D.Dynamics.b2BodyDef,
+                b2Body		   = Box2D.Dynamics.b2Body,
+                b2CircleShape  = Box2D.Collision.Shapes.b2CircleShape,
+                b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape,
+                b2Settings     = Box2D.Common.b2Settings,
+                b2Vec2         = Box2D.Common.Math.b2Vec2,
+
+            // Box2D world variables
+                wWorld         = undefined,
+                wBall          = undefined;
+            var orientation=90;
+            var friction=0.0;
+            function createPhysicsWorld() {
+                // Create the world object.
+                wWorld = new b2World(new b2Vec2(0, 0), true);
+
+                // Create the ball.
+                var bodyDef = new b2BodyDef();
+                bodyDef.type = b2Body.b2_dynamicBody;
+                bodyDef.position.Set(1, 1);
+                wBall = wWorld.CreateBody(bodyDef);
+                var fixDef = new b2FixtureDef();
+                fixDef.density = 1.0;
+                fixDef.friction = 0.0;
+                fixDef.restitution = 0.25;
+                fixDef.shape = new b2CircleShape(ballRadius);
+                wBall.CreateFixture(fixDef);
+
+                // Create the maze.
+                bodyDef.type = b2Body.b2_staticBody;
+                fixDef.shape = new b2PolygonShape();
+                fixDef.shape.SetAsBox(0.5, 0.5);
+                for (var i = 0; i < maze.dimension; i++) {
+                    for (var j = 0; j < maze.dimension; j++) {
+                        if (maze[i][j]) {
+                            bodyDef.position.x = i;
+                            bodyDef.position.y = j;
+                            wWorld.CreateBody(bodyDef).CreateFixture(fixDef);
+                        }
+                    }
+                }
+
+
+            }
+
+
+            function generate_maze_mesh(field) {
+                var dummy = new THREE.Geometry();
+                for (var i = 0; i < field.dimension; i++) {
+                    for (var j = 0; j < field.dimension; j++) {
+                        if (field[i][j]) {
+                            var geometry = new THREE.CubeGeometry(1,1,1,1,1,1);
+                            var mesh_ij = new THREE.Mesh(geometry);
+                            mesh_ij.position.x = i;
+                            mesh_ij.position.y = j;
+                            mesh_ij.position.z = 0.5;
+                            THREE.GeometryUtils.merge(dummy, mesh_ij);
+                        }
+                    }
+                }
+                var material = new THREE.MeshPhongMaterial({map: brickTexture});
+                var mesh = new THREE.Mesh(dummy, material)
+                return mesh;
+            }
+
+
+            function createRenderWorld() {
+
+                // Create the scene object.
+                scene = new THREE.Scene();
+
+                // Add the light.
+                light= new THREE.PointLight(0xffffff, 1);
+                light.position.set(1, 1, 1.3);
+                scene.add(light);
+
+                // Add the ball.
+                g = new THREE.SphereGeometry(ballRadius, 32, 16);
+                m = new THREE.MeshPhongMaterial({map:ironTexture});
+                ballMesh = new THREE.Mesh(g, m);
+                ballMesh.position.set(1, 1, ballRadius);
+                scene.add(ballMesh);
+
+                // Add the camera.
+                var aspect = window.innerWidth/window.innerHeight;
+                camera = new THREE.PerspectiveCamera(80, aspect, 1, 2000);
+                camera.position.set(1, 1, 5);
+                scene.add(camera);
+
+                // Add the maze.
+                mazeMesh = generate_maze_mesh(maze);
+                scene.add(mazeMesh);
+
+                // Add the ground.
+                g = new THREE.PlaneGeometry(mazeDimension*10, mazeDimension*10, mazeDimension, mazeDimension);
+                planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping;
+                planeTexture.repeat.set(mazeDimension*5, mazeDimension*5);
+                m = new THREE.MeshPhongMaterial({map:planeTexture});
+                planeMesh = new THREE.Mesh(g, m);
+                planeMesh.position.set((mazeDimension-1)/2, (mazeDimension-1)/2, 0);
+                planeMesh.rotation.set(Math.PI/2, 0, 0);
+                scene.add(planeMesh);
+
+            }
+
+
+            function updatePhysicsWorld() {
+
+                // Apply "friction".
+                var lv = wBall.GetLinearVelocity();
+                //lv.Multiply(0.80+friction);
+                var mmfriction=(Math.floor((mazeDimension-1)/2 - 2)*0.01);
+                if(mmfriction>0.4){mmfriction=0.4;}
+                lv.Multiply(0.92+mmfriction);
+                wBall.SetLinearVelocity(lv);
+
+                // Apply user-directed force.
+                var f = new b2Vec2(keyAxis[0]*wBall.GetMass()*0.25, keyAxis[1]*wBall.GetMass()*0.25);
+                wBall.ApplyImpulse(f, wBall.GetPosition());
+                keyAxis = [0,0];
+
+                // Take a time step.
+                wWorld.Step(1/60, 8, 3);
+            }
+
+
+            function updateRenderWorld() {
+
+                // Update ball position.
+                var stepX = (wBall.GetPosition().x+(ballRadius-oballRadius)/4) - (ballMesh.position.x);
+                var stepY = (wBall.GetPosition().y+(ballRadius-oballRadius)/4) - (ballMesh.position.y);
+                //alert(wBall.GetPosition().x +"  :  "+ (ballMesh.position.x)+" ] "+wBall.GetPosition().y +"  :  "+ (ballMesh.position.y));
+                if(ballRadius>0.315){gameState = 'fade out2';requestAnimationFrame(gameLoop);}
+                if(stepX==0 || stepY==0){
+                    ballRadius+=0.005;
+                    var percentage=0.315-ballRadius;
+                    percentage=(percentage%ballRadius)*1000;
+                    progressbar.progressbar( "value", percentage );
+                    g = new THREE.SphereGeometry(ballRadius, 32, 16);
+                    m = new THREE.MeshPhongMaterial({map:ironTexture});
+                    ballMesh = new THREE.Mesh(g, m);
+                    ballMesh.position.set(ballMesh.position.x, ballMesh.position.y, ballRadius);
+                    scene.add(ballMesh);
+                }
+                //if stepx==0 or stepy==0 then collide
+                ballMesh.position.x += stepX;
+                ballMesh.position.y += stepY;
+
+                // Update ball rotation.
+                var tempMat = new THREE.Matrix4();
+                tempMat.makeRotationAxis(new THREE.Vector3(0,1,0), stepX/ballRadius);
+                tempMat.multiplySelf(ballMesh.matrix);
+                ballMesh.matrix = tempMat;
+                tempMat = new THREE.Matrix4();
+                tempMat.makeRotationAxis(new THREE.Vector3(1,0,0), -stepY/ballRadius);
+                tempMat.multiplySelf(ballMesh.matrix);
+                ballMesh.matrix = tempMat;
+                ballMesh.rotation.getRotationFromMatrix(ballMesh.matrix);
+
+                // Update camera and light positions.
+                camera.position.x += (ballMesh.position.x - camera.position.x) * 0.1;
+                camera.position.y += (ballMesh.position.y - camera.position.y) * 0.1;
+                camera.position.z += (5 - camera.position.z) * 0.1;
+                light.position.x = camera.position.x;
+                light.position.y = camera.position.y;
+                light.position.z = camera.position.z - 3.7;
+            }
+
+
+            function gameLoop() {
+
+                switch(gameState) {
+
+                    case 'initialize':
+                        maze = generateSquareMaze(mazeDimension);
+                        maze[mazeDimension-1][mazeDimension-2] = false;
+                        createPhysicsWorld();
+                        createRenderWorld();
+                        camera.position.set(1, 1, 5);
+                        light.position.set(1, 1, 1.3);
+                        light.intensity = 0;
+                        var level = Math.floor((mazeDimension-1)/2 - 4);
+                            level+=2;
+                        $('#level').html('Level ' + level);
+                        startTime();
+                        gameState = 'fade in';
+                        //progressbar.progressbar( "value", 0 );
+                            //friction+=level*0.03;
+                            //if(friction>0.15){friction=0.15;}
+                        break;
+
+                    case 'fade in':
+                        light.intensity += 0.1 * (1.0 - light.intensity);
+                        renderer.render(scene, camera);
+                        if (Math.abs(light.intensity - 1.0) < 0.05) {
+                            light.intensity = 1.0;
+                            gameState = 'play'
+                        }
+                        break;
+
+                    case 'play':
+                        updatePhysicsWorld();
+                        updateRenderWorld();
+                        renderer.render(scene, camera);
+
+                        // Check for victory.
+                        var mazeX = Math.floor(ballMesh.position.x + 0.5);
+                        var mazeY = Math.floor(ballMesh.position.y + 0.5);
+                        if (mazeX == mazeDimension && mazeY == mazeDimension - 2) {
+                            mazeDimension += 2;
+                            gameState = 'fade out';
+                        }
+                        break;
+
+                    case 'fade out':
+                            //level sucess
+                        updatePhysicsWorld();
+                        updateRenderWorld();
+                        light.intensity += 0.1 * (0.0 - light.intensity);
+                        renderer.render(scene, camera);
+                        if (Math.abs(light.intensity - 0.0) < 0.1) {
+                            light.intensity = 0.0;
+                            renderer.render(scene, camera);
+                            gameState = 'initialize';
+                            var level = Math.floor((mazeDimension-1)/2 - 4);
+                            level+=2;
+                            var timer=h11+":"+m11+":"+s11;
+                            var mytt=h11*24+m11*60+s11;
+                            var myscore=(Math.pow(0.9,Math.abs(level*30-mytt)));
+                            myscore=((level*30)/mytt)*1000;
+                            window.localStorage.setItem('curlevel', level);
+                            window.localStorage.setItem('mytime', timer);
+                            window.localStorage.setItem('score', myscore);
+                            window.location = "score.html";
+                            //location.reload();
+                        }
+                        break;
+                    case 'fade out2':
+                            //level failed
+                        updatePhysicsWorld();
+                        updateRenderWorld();
+                        light.intensity += 0.1 * (0.0 - light.intensity);
+                        renderer.render(scene, camera);
+                        if (Math.abs(light.intensity - 0.0) < 0.1) {
+                            light.intensity = 0.0;
+                            renderer.render(scene, camera);
+                            //gameState = 'initialize'
+                            location.reload();
+                        }
+                        break;
+
+                }
+
+                requestAnimationFrame(gameLoop);
+
+            }
+
+
+            function onResize() {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth/window.innerHeight;
+                camera.updateProjectionMatrix();
+            }
+
+
+            function onMoveKey(axis) {
+                keyAxis = axis.slice(0);
+            }
+
+
+            jQuery.fn.centerv = function () {
+                wh = window.innerHeight;
+                h = this.outerHeight();
+                this.css("position", "absolute");
+                this.css("top", Math.max(0, (wh - h)/2) + "px");
+                return this;
+            }
+
+
+            jQuery.fn.centerh = function () {
+                ww = window.innerWidth;
+                w = this.outerWidth();
+                this.css("position", "absolute");
+                this.css("left", Math.max(0, (ww - w)/2) + "px");
+                return this;
+            }
+
+
+            jQuery.fn.center = function () {
+                this.centerv();
+                this.centerh();
+                return this;
+            }
+
+
+
+            $(document).ready(function() {
+
+                // Prepare the instructions.
+                $('#instructions').center();
+                $('#instructions').hide();
+                KeyboardJS.bind.key('i', function(){$('#instructions').show()},
+                                         function(){$('#instructions').hide()});
+
+                // Create the renderer.
+                renderer = new THREE.WebGLRenderer();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(renderer.domElement);
+
+                // Bind keyboard and resize events.
+                KeyboardJS.bind.axis('left', 'right', 'down', 'up', onMoveKey);
+                KeyboardJS.bind.axis('h', 'l', 'j', 'k', onMoveKey);
+                $(window).resize(onResize);
+
+
+                // Set the initial game state.
+                gameState = 'initialize';
+
+                // Start the game loop.
+                requestAnimationFrame(gameLoop);
+                document.addEventListener("deviceready", onDeviceReady, false);
+
+            })
+
+            //motion
+            function onDeviceReady() {
+                function onSuccess(acceleration) {
+                    var myx=acceleration.x;
+                    var myy=acceleration.y;
+                    var map = CDVGamepad.observe();
+
+                    var val11=0;
+                    if(map["x-axis"]!=0 || map["y-axis"]!=0){
+                        myx=map["y-axis"];
+                        myy=map["x-axis"];
+                    }
+                    if(Math.abs(myx)>Math.abs(myy)){val11=Math.abs(myx);}
+                    else{val11=Math.abs(myy);}
+                    friction=val11*0.015;
+                    if(map["BoosT"]!=0){friction=0.05;}
+                    //alert(JSON.stringify(map));
+                    if(orientation==0){
+                        if(myx>0&&myy>0){keyAxis=[-1,-1];}
+                        if(myx>0&&myy<=0){keyAxis=[-1,-1];}
+                        if(myx<=0&&myy>0){keyAxis=[1,-1];}
+                        if(myx<=0&&myy<=0){keyAxis=[1,1];}
+                    }else{
+                        if(myx>0&&myy>0){keyAxis=[1,-1];}
+                        if(myx>0&&myy<=0){keyAxis=[-1,-1];}
+                        if(myx<=0&&myy>0){keyAxis=[1,1];}
+                        if(myx<=0&&myy<=0){keyAxis=[-1,1];}
+                    }
+
+                    /*alert(orientation+'Acceleration X: ' + acceleration.x + '\n' +
+                    'Acceleration Y: ' + acceleration.y + '\n' +
+                    'Acceleration Z: ' + acceleration.z + '\n' +
+                    'Timestamp: '      + acceleration.timestamp + '\n');*/
+
+                }
+
+                function onError() {
+                    alert('onError!');
+                }
+
+                var options = { frequency: 100 };  // Update every 3 seconds
+
+                var watchID = navigator.accelerometer.watchAcceleration(onSuccess, onError, options);
+
+                CDVGamepad.setup({start:false,joystick:true,buttons:[{name:"BoosT"}],layout:"BOTTOM_LEFT"});
+
+
+            }
+
+
+
+        </script>
+    
+        <style>
+        
+            body {
+                background: black;
+                margin: 0;
+                padding: 0;
+                font-family: 'Helvetica';
+            }
+            
+            #instructions {
+                background-color: rgba(0,0,0,0.75);
+                color: white;
+                text-align: center;
+                padding: 32px;
+                margin: 0px;
+                display: inline;
+                border: 2px solid white;
+            }
+
+            #help {
+                position: absolute;
+                left: 0px;
+                bottom: 0px;
+                padding: 4px;
+                color: white;   
+            }
+
+            #level {
+                z-index: 100000000;
+                position: absolute;
+                left: 0px;
+                top: 5px;
+                color: white;
+                font-weight: bold;
+                background: url(mygame/levelbox.png);
+                background-size: 100% 100%;
+                font-size: 20px;
+                padding: 10px;
+                font-family: font2;
+            }
+
+        </style>
+        
+    </head>
+    
+    <body>
+    
+    <div id='instructions'>
+       <!-- How to play Astray:-->
+    </div>
+    
+    <div id='help'>
+        <!-- Hold down the 'I' key for instructions.-->
+    </div>
+
+    <div id='level'>
+        Level 1
+    </div>
+
+
+    <script>
+        var h11 = 0;
+        var m11 = 0;
+        var s11 = 0;
+
+        function startTime() {
+            s11+=1;
+            if(s11>=60){m11+=1;s11=0;}
+            if(m11>=60){h11+=1;m11=0;}
+            document.getElementById('txt').innerHTML =
+                    h11 + ":" + m11 + ":" + s11;
+            var t = setTimeout(startTime, 300);
+        }
+
+    </script>
+    <div id="txt" style="color: white;
+    z-index: 10000000;
+    font-size: 15px;
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    background: url(mygame/timer.png);
+    background-size: 100% 100%;
+    padding: 20px;
+    font-size: 20px;
+    padding-left: 60px;
+    width: 70px;
+    font-family: font2;"></div>
+
+
+    <!--progress-->
+    <style>
+        #progressbar{
+            z-index: 1000000;
+            width: 100px;
+            position: absolute;
+            top: 10px;
+            right: 200px;
+            font-family: font2;
+            border-radius: 100px;
+            height: 45px;
+            border: 7px solid rgb(228, 164, 104);
+        }
+        .ui-progressbar {
+            position: relative;
+        }
+        .progress-label {
+            position: absolute;
+            left: 50%;
+            top: 25%;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #fff;
+        }
+        .hearticon{
+            background: url("mygame/heart.png");
+            position: absolute;
+            top: 10px;
+            right: 290px;
+            z-index: 10000000;
+            width: 50px;
+            height: 50px;
+            background-size: 100% 100%;
+            border-radius: 200px;
+        }
+    </style>
+    <script>
+        $( function() {
+             progressbar = $( "#progressbar" );
+                    progressLabel = $( ".progress-label" );
+
+            progressbar.progressbar({
+                value: false,
+                change: function() {
+                    progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+                },
+                complete: function() {
+                    progressLabel.text( ":)" );
+                }
+            });
+
+            /*function progress() {
+                var val = progressbar.progressbar( "value" ) || 0;
+
+                progressbar.progressbar( "value", val + 2 );
+
+                if ( val < 99 ) {
+                    setTimeout( progress, 80 );
+                }
+            }
+            setTimeout( progress, 2000 );*/
+
+        } );
+
+
+    </script>
+    <div id="progressbar"><div class="progress-label"></div></div>
+    <div class="hearticon"></div>
+    </body>
+
+</html>
+

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+    <link rel="stylesheet" type="text/css" href="../animate.css">
+    <script src="../jquery.js"></script>
+    <meta charset="utf-8" />
+	<title>Phaser level select test</title>
+	<style> body { margin: 0; background: #B4D9E7; } </style>
+    <script type='text/javascript' charset='utf-8' src='../cordova.js'></script>
+    <script src="phaser-2.0.6.min.js"></script>
+	<script src="levelselect.js"></script>
+	<script src="maingame.js"></script>
+</head>
+<body>
+<script>
+(function() {
+	// initialize the framework
+	var game = new Phaser.Game(CANVAS_WIDTH, CANVAS_HEIGHT, Phaser.CANVAS, 'game');
+	// add game states
+	game.state.add('levsel', LevelSelect); // note: first parameter is only the name used to refer to the state
+	game.state.add('game', MainGame);
+	// start the boot state
+	game.state.start('levsel');
+})();
+</script>
+
+<style>
+    body{
+        font-family: font2 ;
+        color: white;
+        font-size: 25px;
+    }
+    .levelsel{
+        background: url(../mygame/levelsel.png);
+        background-size: 100% 100%;
+        z-index: 10000;
+        width: 17%;
+        position: absolute;
+        bottom: 25%;
+        right: 1%;
+        padding-right: 3%;
+        padding-left: 3%;
+        padding-bottom: 5%;
+    }
+    .levelsel div{
+        font-size: 20px;
+        padding-top: 8%;
+        padding-bottom: 8%;
+        text-align: center;
+    }
+    .levelsel .txt{
+        margin-top: -1%;
+        margin-bottom: 10%;
+        font-size: 17px;
+    }
+    </style>
+<div class="levelsel" id="levelsel">
+    <div class="txt" id="mytxt">Level</div>
+    <div style="background: url('../mygame/button1.png');background-size: 100% 100%;" onclick="makenext(this)">Next</div>
+    <div style="background: url('../mygame/button2.png');background-size: 100% 100%;" onclick="makeprev(this)">Previous</div>
+    <div style="background: url('../mygame/button3.png');background-size: 100% 100%;" onclick="makesett(this)">Settings</div>
+    <div style="background: url('../mygame/button4.png');background-size: 100% 100%;" onclick="exitFromApp(this)">Exit</div>
+</div>
+<script>
+    var str = window.localStorage.getItem('myvelselector');
+    if (str==null ) {
+        str=0;
+    }
+    str-=1;str+=2;
+    document.getElementById("mytxt").innerHTML="Level "+str;
+    $("#levelsel").addClass('animated rubberBand');
+    function makesett(a){
+        $(a).addClass('animated bounceIn');
+        setTimeout(function(){
+            window.location.replace('../Settings/index.html');
+        },300);
+    }
+    function makenext(a){
+        $(a).addClass('animated bounceIn');
+        setTimeout(function(){
+            var str = window.localStorage.getItem('myvelselector');
+            if (str==null ) {
+                str=0;
+            }
+            str-=1;str+=2;
+            window.localStorage.setItem('myvelselector', str);
+            location.reload();
+        },300);
+    }
+
+    function makeprev(a){
+        $(a).addClass('animated bounceIn');
+        setTimeout(function(){
+            var str = window.localStorage.getItem('myvelselector');
+            if (str==null ) {
+                str=0;
+            }
+            if(str>0){str-=1;}
+            window.localStorage.setItem('myvelselector', str);
+            location.reload();
+        },300);
+    }
+
+    function exitFromApp(a)
+    {
+        $(a).addClass('animated bounceIn');
+        setTimeout(function(){
+            navigator.app.exitApp();
+        },500);
+    }
+</script>
+</body>
+</html>

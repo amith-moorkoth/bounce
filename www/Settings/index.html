@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="stylesheet" href="../css/css/framework7.ios.css">
+    <link rel="stylesheet" href="css/my-app.css">
+  </head>
+  <body>
+    <div class="statusbar-overlay"></div>
+    <div class="panel-overlay"></div>
+
+    <div class="views">
+      <div class="view view-main">
+        <div class="pages navbar-through toolbar-through">
+          <div data-page="index" class="page">
+            <div class="page-content">
+              <div class="content-block-title"><center>Settings</center></div>
+              <div class="list-block">
+                <ul>
+                  <li>
+                    <div class="item-content">
+                      <div class="item-media"><i class="icon icon-form-name"></i></div>
+                      <div class="item-inner">
+                        <div class="item-title label">Name</div>
+                        <div class="item-input">
+                          <input type="text" placeholder="Your name" id="name" onkeydown="savetostorage('name',this.value)">
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="item-content">
+                      <div class="item-media"><i class="icon icon-form-email"></i></div>
+                      <div class="item-inner">
+                        <div class="item-title label">E-mail</div>
+                        <div class="item-input">
+                          <input type="email" placeholder="E-mail" id="email" onkeydown="savetostorage('Email',this.value)">
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="item-content">
+                      <div class="item-media"><i class="icon icon-form-toggle"></i></div>
+                      <div class="item-inner">
+                        <div class="item-title label">Sound</div>
+                        <div class="item-input">
+                          <label class="label-switch">
+                            <input type="checkbox" value="0" id="sound" onchange="savetostorage('sound',this.checked)">
+                            <div class="checkbox"></div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+                <div class="content-block-title">Ball Texture</div>
+                <div class="list-block">
+                    <ul id="balltext"></ul>
+                </div>
+
+                <div class="content-block-title">Wall Texture</div>
+                <div class="list-block">
+                    <ul id="meshtext"></ul>
+                </div>
+
+                <div class="content-block-title">Background Texture</div>
+                <div class="list-block">
+                    <ul id="backtext"></ul>
+                </div>
+
+
+                <div class="content-block" style="text-align: center;">&copy;Amnoid</div>
+                <div class="backgo" onclick="window.location.replace('../hex/index.html');"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+    .backgo{
+        background: url(../mygame/back.png);
+        background-size: 100% 100%;
+        position: fixed;
+        width: 50px;
+        height: 50px;
+        top: 10px;
+        left: 10px;
+        z-index: 10000;
+    }
+    </style>
+    <script type="text/javascript" src="../css/js/framework7.js"></script>
+    <script type="text/javascript" src="js/my-app.js"></script>
+  <script>
+
+      function makeball_tex(){
+          for(i=1;i<8;i++){
+              var str;
+              str="<li> <label class='label-radio item-content'> " +
+              "<input type='radio' name='wall' value='"+i+"'" ;
+              if(gets("balltex")==i){str+="checked";}
+              str+=" onchange=\"savetostorage('balltex',this.value)\"> " +
+              "<div class='item-inner'> " +
+              "<div class='item-title'>Texture "+i+"</div> " +
+              "</div> </label> </li>";
+              document.getElementById("balltext").innerHTML+=str;
+          }
+      }makeball_tex();
+      function makemesh_tex(){
+          for(i=1;i<9;i++){
+              var str;
+              str="<li> <label class='label-radio item-content'> " +
+              "<input type='radio' name='mesh' value='"+i+"'" ;
+              if(gets("walltex")==i){str+="checked";}
+              str+=" onchange=\"savetostorage('walltex',this.value)\"> " +
+              "<div class='item-inner'> " +
+              "<div class='item-title'>Texture "+i+"</div> " +
+              "</div> </label> </li>";
+              document.getElementById("meshtext").innerHTML+=str;
+          }
+      }makemesh_tex();
+      function makeback_tex(){
+          for(i=1;i<9;i++){
+              var str;
+              str="<li> <label class='label-radio item-content'> " +
+              "<input type='radio' name='back' value='"+i+"'" ;
+              if(gets("backtex")==i){str+="checked";}
+              str+=" onchange=\"savetostorage('backtex',this.value)\"> " +
+              "<div class='item-inner'> " +
+              "<div class='item-title'>Texture "+i+"</div> " +
+              "</div> </label> </li>";
+              document.getElementById("backtext").innerHTML+=str;
+          }
+      }makeback_tex();
+
+      function savetostorage(name,val){
+          window.localStorage.setItem(name, val);
+      }
+      function gets(name){
+          return window.localStorage.getItem(name);
+      }
+
+      function retrieveval(){
+          document.getElementById("name").value=gets("name");
+          document.getElementById("email").value=gets("Email");
+          document.getElementById("sound").checked=gets("sound");
+      }retrieveval();
+  </script>
+  </body>
+</html>
